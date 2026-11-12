@@ -1,115 +1,163 @@
-# Kohort — Make room for progress
+# 🌅 Kohort
+### Make room for progress.
 
-An academic productivity and collaboration platform: planner, assignment tracker, solo and group focus sessions, study rooms and real-time chat.
+**Your space to study, connect, and get things done!**
 
-| Layer | Tech |
+🔗 **Live Website:** https://kohort-web.netlify.app/
+
+Kohort is a student-focused platform built to make college life a little less chaotic. From managing assignments and daily tasks to chatting with friends and studying together, Kohort brings productivity and collaboration into one place.
+
+Because keeping track of 27 things in your head was never a sustainable strategy. 💀
+
+## ✨ What can you do with Kohort?
+
+- 🔐 **Secure Login:** Sign up and log in with Firebase Authentication.
+- 💬 **Real-Time Chat:** Have private and group conversations.
+- 🟢 **Online Presence:** See who's around and available.
+- 📚 **Study Rooms:** Create or join spaces to study together.
+- ⏱️ **Focus Sessions:** Stay focused with individual and group study sessions.
+- ✅ **Task Management:** Keep track of your daily to-dos.
+- 📅 **Assignment Tracking:** Stay ahead of deadlines.
+- 📊 **Personal Dashboard:** Get an overview of your tasks and productivity.
+
+## 🛠️ Built With
+
+| Part | Technologies |
 |---|---|
-| Client | React 19 (Vite), React Router, Context API, plain CSS ("Morning Light" theme, DM Sans + Inter) |
-| API | Node.js, Express, REST, `firebase-admin` token verification |
-| Structured data | MySQL (users, tasks, assignments, rooms, memberships, invites, conversations, focus history, group sessions) |
-| Realtime | Cloud Firestore (chat messages, shared group-timer state), Realtime Database (online/offline presence) |
-| Auth | Firebase Authentication (email + password) |
+| Frontend | React, Vite, JavaScript, CSS |
+| Backend | Node.js, Express.js |
+| Database | TiDB Cloud (MySQL-compatible) |
+| Authentication | Firebase Authentication |
+| Real-Time Features | Firebase Firestore, Realtime Database |
+| Frontend Hosting | Netlify |
+| Backend Hosting | Render |
 
+## 📂 Project Structure
+
+```text
+Kohort/
+├── client/
+│   ├── public/
+│   ├── src/
+│   ├── .env.example
+│   └── package.json
+│
+├── server/
+│   ├── src/
+│   ├── .env.example
+│   └── package.json
+│
+├── .gitignore
+└── README.md
 ```
-kohort/
-├── client/            React app
-│   └── src/{pages,components,context,hooks,lib}
-├── server/            Express API
-│   ├── sql/schema.sql
-│   └── src/{routes,middleware,config,utils}
-├── firestore.rules    Firestore security rules
-├── database.rules.json  Realtime Database rules
-└── firebase.json
-```
 
-## How the pieces fit together
+## 🚀 Run It Locally
 
-* **Identity**: the browser signs in with Firebase Auth and sends its ID token to the API (`Authorization: Bearer …`). The API verifies it and maps it to a MySQL `users` row (created on first request).
-* **Authorization**: every REST route scopes data to the authenticated user (tasks and assignments by owner; rooms, conversations and sessions by membership; private rooms are invisible to non-members).
-* **Realtime access control**: membership changes go through the API, which mirrors a `memberUids` list into Firestore with the Admin SDK. Firestore rules only let those UIDs read or post messages. Clients can never write membership or timer state.
-* **Synchronised group timer**: the host's action (start / pause / resume / reset) hits the API, which stores an absolute `endsAt` timestamp and mirrors it to Firestore. Every participant listens to that document and computes `endsAt − (now + serverOffset)`, so everyone sees the same countdown. When it reaches zero any member reports completion; the server verifies the time has really elapsed, finishes the session once, and records a focus entry for each member.
-* **Presence**: each client writes `status/{uid}` in Realtime Database with an `onDisconnect` hook.
+Want to explore the code or run Kohort on your machine? Let's go!
 
-## Setup
+### Prerequisites
+- Node.js and npm
+- Git
+- A Firebase project
+- A MySQL-compatible database
 
-### 1. Prerequisites
-Node.js 20+, MySQL 8+ (or MariaDB 10.6+), a Firebase project.
+### 1. Clone the repository
 
-### 2. Firebase project
-1. Create a project at <https://console.firebase.google.com>.
-2. **Authentication → Sign-in method**: enable *Email/Password*.
-3. **Firestore Database**: create a database (production mode).
-4. **Realtime Database**: create a database; copy its URL.
-5. **Project settings → General → Your apps**: add a *Web app* and copy its config values.
-6. **Project settings → Service accounts → Generate new private key**: save the JSON as `server/serviceAccountKey.json` (it is git-ignored).
-7. Deploy the rules (either paste them in the console or use the CLI):
-   ```bash
-   npm i -g firebase-tools && firebase login
-   firebase use --add            # pick your project
-   firebase deploy --only firestore:rules,database
-   ```
-
-### 3. Database
 ```bash
-cd server
-cp .env.example .env      # fill in DB_* values and Firebase paths
-npm install
-npm run db:init           # creates the database and tables from sql/schema.sql
-npm run dev               # API on http://localhost:5000
+git clone https://github.com/Pranavi-1125/Kohort.git
+cd Kohort
 ```
 
-### 4. Client
+### 2. Install dependencies
+
 ```bash
 cd client
-cp .env.example .env      # paste the Firebase web config
 npm install
-npm run dev               # http://localhost:5173 (proxies /api to :5000)
+
+cd ../server
+npm install
 ```
-Register two accounts (use a second browser profile) to try chat, rooms, presence and group focus.
 
-## Environment variables
+### 3. Set up environment variables
 
-**server/.env**
+Create `.env` files inside both `client` and `server` using their respective `.env.example` files.
 
-| Variable | Purpose |
-|---|---|
-| `PORT` | API port (default 5000) |
-| `CLIENT_ORIGIN` | Allowed browser origin(s) for CORS, comma-separated |
-| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | MySQL connection |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to the Firebase service-account JSON |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | Alternative: the full JSON as a single-line string (for hosts without file storage) |
-| `FIREBASE_DATABASE_URL` | Realtime Database URL |
+**Client (`client/.env`):**
 
-**client/.env**
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_DATABASE_URL=
+```
 
-| Variable | Purpose |
-|---|---|
-| `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_DATABASE_URL` | Firebase web config |
-| `VITE_API_URL` | API base URL in production (e.g. `https://api.example.com/api`). Leave unset in development. |
+**Server (`server/.env`):**
 
-`GET /api/health` reports whether the database and Firebase are configured.
+```env
+PORT=5000
+CLIENT_ORIGIN=http://localhost:5173
 
-## Deployment
+DB_HOST=
+DB_PORT=4000
+DB_USER=
+DB_PASSWORD=
+DB_NAME=kohort
 
-**API** (Render, Railway, Fly.io, a VPS…): run `npm install && npm start` in `server/`. Provide a managed MySQL (PlanetScale-compatible MySQL, Railway MySQL, RDS, etc.), run `npm run db:init` once against it, and set the env vars above. Set `CLIENT_ORIGIN` to your deployed client URL. Put `FIREBASE_SERVICE_ACCOUNT_JSON` in the host's secret store rather than committing a key file.
+FIREBASE_DATABASE_URL=
+FIREBASE_SERVICE_ACCOUNT_JSON=
+```
 
-**Client** (Netlify, Vercel, Firebase Hosting, Cloudflare Pages): set the `VITE_*` variables, run `npm run build`, publish `client/dist`. SPA fallbacks are included (`public/_redirects` for Netlify, `vercel.json` for Vercel; for Firebase Hosting add a rewrite of `**` to `/index.html`). In Firebase **Authentication → Settings → Authorized domains**, add your client domain.
+Fill in the values from your Firebase and database configurations. Keep credentials private!
 
-## Features at a glance
-* **Dashboard**: today's tasks, deadlines, productivity (focus minutes, streak, 7-day chart), quick solo/group focus, recent chats, your rooms, classmates online.
-* **Planner**: month calendar with task dots, add/edit/delete, priority, due time, status and date filters, overdue indicators.
-* **Assignments**: course, due date, status (not started / in progress / completed), overdue highlighting, quick completion, overview stats.
-* **Focus**: customizable focus/break timer that survives page navigation, session summary, saved history. Group sessions with host-controlled shared timer, presence and chat.
-* **Study rooms**: public discovery, join/leave, private rooms with invitations (accept/decline), member list with presence, room chat, owner delete / ownership transfer.
-* **Messages**: direct and group chats, realtime delivery, timestamps, online indicators, group rename / add / remove / leave.
-* **Profile**: name, picture URL, university, major, year, bio.
+### 4. Start the backend
 
-## Security notes
-* All API routes except `/api/health` require a verified Firebase ID token; input is validated server-side; helmet and rate limiting are enabled.
-* Presence (`status/{uid}`) is readable by any signed-in user so classmates can see who is online; only the owner can write their own status.
-* Profile pictures are URLs (no file uploads), to avoid adding a storage service.
+```bash
+cd server
+npm start
+```
 
-## Known limitations
-* No password-less/OAuth sign-in; email + password only.
-* Tasks have no recurrence; the calendar is a month view.
-* Notifications are in-app only (no push/email).
+### 5. Start the frontend
+
+Open another terminal:
+
+```bash
+cd client
+npm run dev
+```
+
+Open the local URL shown by Vite, usually:
+
+```text
+http://localhost:5173
+```
+
+And done! 🎉
+
+## ☁️ Deployment
+
+Kohort is deployed using:
+
+- Netlify for the frontend
+- Render for the backend
+- TiDB Cloud for database hosting
+- Firebase for authentication and real-time services
+
+## 🔒 A Little Security Note
+
+- Authentication is handled through Firebase.
+- API requests use Firebase ID tokens.
+- Sensitive configuration is stored in environment variables.
+- Private credentials are excluded from version control.
+
+## 💛 Built By
+
+**Pranavi Mudradi**
+
+Computer Science Engineering Student
+
+[GitHub Profile](https://github.com/Pranavi-1125)
+
+Built with curiosity, caffeine, and probably too many debugging sessions.
+
+*Learning, building, and making room for progress. One feature at a time.* 🌱
