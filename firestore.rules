@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    function validMessage() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['text', 'senderUid', 'senderName', 'createdAt'])
+        && d.text is string && d.text.size() > 0 && d.text.size() <= 2000
+        && d.senderUid == request.auth.uid
+        && d.senderName is string && d.senderName.size() <= 100
+        && d.createdAt == request.time;
+    }
+
+    // Membership documents are written only by the Kohort API (Admin SDK); clients can never edit them.
+    match /conversations/{cid} {
+      allow read: if signedIn() && request.auth.uid in resource.data.memberUids;
+      allow write: if false;
+      match /messages/{mid} {
+        allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(cid)).data.memberUids;
+        allow create: if signedIn() && validMessage()
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(cid)).data.memberUids;
+        allow update, delete: if false;
+      }
+    }
+
+    match /rooms/{rid} {
+      allow read: if signedIn() && request.auth.uid in resource.data.memberUids;
+      allow write: if false;
+      match /messages/{mid} {
+        allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/rooms/$(rid)).data.memberUids;
+        allow create: if signedIn() && validMessage()
+          && request.auth.uid in get(/databases/$(database)/documents/rooms/$(rid)).data.memberUids;
+        allow update, delete: if false;
+      }
+    }
+
+    // Shared timer state + session chat for group focus.
+    match /groupSessions/{sid} {
+      allow read: if signedIn() && request.auth.uid in resource.data.memberUids;
+      allow write: if false;
+      match /messages/{mid} {
+        allow read: if signedIn() && request.auth.uid in get(/databases/$(database)/documents/groupSessions/$(sid)).data.memberUids;
+        allow create: if signedIn() && validMessage()
+          && request.auth.uid in get(/databases/$(database)/documents/groupSessions/$(sid)).data.memberUids;
+        allow update, delete: if false;
+      }
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
